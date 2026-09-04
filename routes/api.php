@@ -16,19 +16,20 @@ Route::prefix('v1')->group(static function (): void {
     });
 });
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+// Example of test route usage - this one is used for the webhook
+// use Illuminate\Http\Request;
+// use Illuminate\Support\Facades\Log;
 
-Route::post(
-    '/webhooks/task-created',
-    function (Request $request) {
-        Log::info(
-            'Task webhook received',
-            $request->all(),
-        );
+// Route::post(
+//     '/webhooks/task-created',
+//     function (Request $request) {
+//         Log::info(
+//             'Task webhook received',
+//             $request->all(),
+//         );
 
-        return response()->json([
-            'received' => true,
-        ]);
-    }
-);
+//         return response()->json([
+//             'received' => true,
+//         ]);
+//     }
+// );
