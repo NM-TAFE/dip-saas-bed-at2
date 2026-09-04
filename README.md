@@ -155,6 +155,19 @@ Run a focused auth test:
 ```bash
 php artisan test tests/Feature/Auth/LoginTest.php
 ```
+### Code Style
+
+Check code style without modifying files:
+
+```bash
+./vendor/bin/pint --test
+```
+
+Apply Pint fixes locally:
+
+```bash
+./vendor/bin/pint
+```
 
 ### Introspection
 
@@ -191,13 +204,12 @@ Intentional design choices:
 - versioned routes from day one
 - separated API controllers and requests
 - token-based auth for machine clients
-- room for DTO/action layering
+- built for DTOs and action classes as the application grows
 - room for future multitenant scoping
 
 Not implemented yet:
 
 - Multitenancy
-- Data Transfer Object mapping
 - Resource policies
 - Tenant-aware data scoping
 - formal API schema or SDK generation
