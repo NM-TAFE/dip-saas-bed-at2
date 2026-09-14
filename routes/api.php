@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
 Route::prefix('v1')->group(static function (): void {
     Route::as('auth:')
         ->prefix('auth')
@@ -15,9 +18,6 @@ Route::prefix('v1')->group(static function (): void {
         Route::prefix('attachments')->group(base_path(path: 'routes/api/attachments.php'));
     });
 });
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 Route::post(
     '/webhooks/task-created',
