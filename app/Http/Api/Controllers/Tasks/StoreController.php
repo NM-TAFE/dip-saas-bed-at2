@@ -18,8 +18,9 @@ final readonly class StoreController
 
     public function __invoke(StoreTaskRequest $request): MessageResponse
     {
+        // dd($request);
         defer(
-            callback: fn () => $this->bus->dispatch(
+            callback: fn() => $this->bus->dispatch(
                 command: new CreateNewTask(payload: $request->payload()),
             ),
             name: 'create-new-task',

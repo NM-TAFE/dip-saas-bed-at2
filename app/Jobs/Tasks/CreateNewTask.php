@@ -18,6 +18,7 @@ final class CreateNewTask implements ShouldQueue
 
     public function handle(): Task
     {
+        // dd($this->payload);
         $task = Task::query()->create(
             $this->payload->toArray()
         );

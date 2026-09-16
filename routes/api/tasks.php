@@ -6,6 +6,7 @@ use App\Http\Api\Controllers\Tasks\DeleteController;
 use App\Http\Api\Controllers\Tasks\ShowController;
 use App\Http\Api\Controllers\Tasks\StoreController;
 use App\Http\Api\Controllers\Tasks\UpdateController;
+use App\Http\Api\Controllers\Tasks\SyncAttachmentsController;
 use App\Http\Api\Resources\TaskResource;
 use App\Http\Api\Responses\PaginatedCollectionResponse;
 use App\Models\Task;
@@ -26,3 +27,7 @@ Route::post('/', StoreController::class)->name('store');
 Route::put('/{task}', UpdateController::class)->whereUlid('task')->name('update');
 Route::get('/{task}', ShowController::class)->whereUlid('task')->name('show');
 Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
+
+Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
+
+Route::put('/task/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');

@@ -88,11 +88,6 @@ return [
                 'deferred',
             ],
         ],
-        'failed' => [
-            'driver' => 'mongodb',
-            'database' => 'mongodb',
-            'table' => 'failed_jobs',
-        ],
     ],
 
     /*
@@ -125,7 +120,7 @@ return [
     */
 
     'failed' => [
-        'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
+        'driver' => env('QUEUE_FAILED_DRIVER', 'mongodb'),
         'database' => env('DB_CONNECTION', 'mongodb'),
         'table' => 'failed_jobs',
     ],

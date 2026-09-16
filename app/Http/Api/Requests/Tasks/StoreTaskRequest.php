@@ -46,6 +46,8 @@ final class StoreTaskRequest extends FormRequest
     {
         $data = $this->validated();
 
+        // dd($data);
+
         return new NewTask(
             name: (string) $data['name'],
             description: (string) $data['description'] ?? null,

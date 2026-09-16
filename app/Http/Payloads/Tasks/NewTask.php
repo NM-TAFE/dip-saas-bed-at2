@@ -27,6 +27,7 @@ final readonly class NewTask
      */
     public function toArray(): array
     {
+        // dd($this);
         return [
             'name' => $this->name,
             'description' => $this->description,

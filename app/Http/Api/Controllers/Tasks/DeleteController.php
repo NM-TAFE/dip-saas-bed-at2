@@ -18,8 +18,9 @@ final readonly class DeleteController
 
     public function __invoke(Task $task): MessageResponse
     {
+        // dd($task);
         defer(
-            callback: fn () => $this->bus->dispatch(new DeleteTask(task: $task)),
+            callback: fn() => $this->bus->dispatch(new DeleteTask(task: $task)),
             name: 'delete-Task',
         );
 
