@@ -17,10 +17,8 @@ final readonly class SyncAttachmentsController
 {
     public function __construct(private Dispatcher $bus) {}
 
-    public function __invoke(
-        SyncAttachmentsRequest $request,
-        Task $task,
-    ): MessageResponse {
+    public function __invoke(SyncAttachmentsRequest $request,Task $task): MessageResponse
+    {
         defer(
             callback: fn() => $this->bus->dispatch(
                 new SyncTaskAttachments(
@@ -31,9 +29,6 @@ final readonly class SyncAttachmentsController
             name: 'update-task-attachments',
         );
 
-        return new MessageResponse(
-            'Task attachment update accepted.',
-            Response::HTTP_ACCEPTED,
-        );
+        return new MessageResponse('Task attachment update accepted.', Response::HTTP_ACCEPTED,);
     }
 }

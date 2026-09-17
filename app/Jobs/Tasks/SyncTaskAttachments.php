@@ -22,9 +22,11 @@ final class SyncTaskAttachments implements ShouldQueue
 
     public function handle(): void
     {
+        // Create an eloquent collection of all the attachments requested
         $requestedIds = collect($this->payload->attachmentIds)
             ->unique()
             ->values();
+
         // Attach every requested Attachment to this Task.
         Attachment::query()
             ->whereIn('_id', $requestedIds->all())
@@ -35,9 +37,8 @@ final class SyncTaskAttachments implements ShouldQueue
             ]);
 
         // Synchronisation means the submitted list is the desired final state.
-
         // Attachments currently related to the Task but omitted from the request
-        // are detached, not deleted. Their stored file is also left untouched.
+        // are detached, not deleted.
         $removeQuery = Attachment::query()
             ->where('attachmentable_type', PolymorphicRelations::ATTACHMENTABLE_TASK)
             ->where('attachmentable_id', $this->task->id);
