@@ -27,7 +27,4 @@ Route::post('/', StoreController::class)->name('store');
 Route::put('/{task}', UpdateController::class)->whereUlid('task')->name('update');
 Route::get('/{task}', ShowController::class)->whereUlid('task')->name('show');
 Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
-
-Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
-
 Route::put('/task/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');
