@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $tasks = Pagination::simple(
-        Task::query()->with(['user']),
+        Task::query()->with(['user', 'attachments']),
     );
 
     return new PaginatedCollectionResponse(
@@ -27,4 +27,4 @@ Route::post('/', StoreController::class)->name('store');
 Route::put('/{task}', UpdateController::class)->whereUlid('task')->name('update');
 Route::get('/{task}', ShowController::class)->whereUlid('task')->name('show');
 Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
-Route::put('/task/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');
+Route::put('/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');

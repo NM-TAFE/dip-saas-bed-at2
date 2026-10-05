@@ -7,6 +7,7 @@ namespace App\Http\Api\Resources;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Api\Resources\AttachmentResource;
 
 /** @property Task $resource */
 final class TaskResource extends JsonResource
@@ -18,7 +19,6 @@ final class TaskResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // dd($request);
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -37,6 +37,9 @@ final class TaskResource extends JsonResource
                 ]
             ),
             'tag_ids' => $this->tag_ids ?? [],
+            'attachments' => AttachmentResource::collection(
+                $this->whenLoaded('attachments'),
+            ),
         ];
     }
 }

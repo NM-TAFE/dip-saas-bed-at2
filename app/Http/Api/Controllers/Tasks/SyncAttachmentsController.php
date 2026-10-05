@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Api\Controllers\Tasks;
 
 use App\Http\Api\Requests\Tasks\SyncAttachmentsRequest;
-use App\Http\Responses\MessageResponse;
+use App\Http\Api\Responses\MessageResponse;
 use App\Jobs\Tasks\SyncTaskAttachments;
 use App\Models\Task;
 use Illuminate\Contracts\Bus\Dispatcher;
@@ -17,7 +17,7 @@ final readonly class SyncAttachmentsController
 {
     public function __construct(private Dispatcher $bus) {}
 
-    public function __invoke(SyncAttachmentsRequest $request,Task $task): MessageResponse
+    public function __invoke(SyncAttachmentsRequest $request, Task $task): MessageResponse
     {
         defer(
             callback: fn() => $this->bus->dispatch(

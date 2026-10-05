@@ -11,7 +11,7 @@ final readonly class ShowController
 {
     public function __invoke(Task $task): TaskResource
     {
-        $task->load(['user']);
+        $task->load(['user', 'attachments']);
 
         return new TaskResource($task);
     }
