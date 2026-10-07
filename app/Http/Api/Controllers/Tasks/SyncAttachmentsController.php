@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Api\Controllers\Tasks;
 
 use App\Http\Api\Requests\Tasks\SyncAttachmentsRequest;
-use App\Http\Responses\MessageResponse;
+use App\Http\Api\Responses\MessageResponse;
 use App\Jobs\Tasks\SyncTaskAttachments;
 use App\Models\Task;
 use Illuminate\Contracts\Bus\Dispatcher;

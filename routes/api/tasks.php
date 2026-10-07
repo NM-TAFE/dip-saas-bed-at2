@@ -30,4 +30,4 @@ Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('dele
 
 Route::delete('/{task}', DeleteController::class)->whereUlid('task')->name('delete');
 
-Route::put('/task/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');
+Route::put('/{task}/attachments', SyncAttachmentsController::class)->whereUlid('task')->name('sync.tasks');
