@@ -104,6 +104,16 @@ final class S3UploadJob implements ShouldQueue
         // Use the state to mark the upload as completed.
         $upload->status = 'completed';
         $upload->save();
+
+
+        // Remove the staged S3 object after successful completion.
+        $deleted = $storage->deleteStaged($upload->staged_path);
+
+        if ($deleted) {
+            Log::info('Temporary S3 upload cleaned up.', [
+                'temporary_upload_id' => $upload->getKey(),
+            ]);
+        }
     }
 
 
