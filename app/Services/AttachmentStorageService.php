@@ -98,4 +98,47 @@ final class AttachmentStorageService
 
         return $permanentPath;
     }
+
+    /**
+     * Delete a staged S3 object after successful processing.
+     * Cleanup failure must not invalidate a completed upload.
+     */
+    public function deleteStaged(string $stagedPath): bool
+    {
+        if (
+            $stagedPath === '' ||
+            ! str_starts_with($stagedPath, 'temporary-uploads/')
+        ) {
+            Log::warning('Invalid temporary upload cleanup path.', [
+                'path' => $stagedPath,
+            ]);
+
+            return false;
+        }
+
+        try {
+            $disk = Storage::disk('s3');
+
+            if (! $disk->exists($stagedPath)) {
+                return true;
+            }
+
+            $deleted = $disk->delete($stagedPath);
+
+            if (! $deleted) {
+                Log::warning('Unable to delete staged S3 object.', [
+                    'path' => $stagedPath,
+                ]);
+            }
+
+            return $deleted;
+        } catch (Throwable $exception) {
+            Log::warning('Staged S3 cleanup failed.', [
+                'path' => $stagedPath,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
 }
