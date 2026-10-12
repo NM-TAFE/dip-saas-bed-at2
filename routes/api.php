@@ -16,6 +16,7 @@ Route::prefix('v1')->group(static function (): void {
         Route::prefix('users')->group(base_path(path: 'routes/api/users.php'));
         Route::prefix('tasks')->group(base_path(path: 'routes/api/tasks.php'));
         Route::prefix('attachments')->group(base_path(path: 'routes/api/attachments.php'));
+        Route::prefix('temporary-uploads')->group(base_path(path: 'routes/api/temporary-uploads.php'));
     });
 });
 
