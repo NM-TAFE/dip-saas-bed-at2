@@ -61,4 +61,41 @@ final class AttachmentStorageService
 
         return $path;
     }
+
+    /**
+     * Promote a staged S3 object into permanent attachment storage.
+     * If the MongoDB operation fails after the S3 copy succeeds,
+     * the original staged file remains available for recovery.
+     * The staged object will be deleted later, once the upload has been successfully completed.
+     */
+    public function promote(
+        string $stagedPath,
+        string $taskId,
+        string $attachmentId,
+    ): string {
+        $permanentPath = "attachments/tasks/{$taskId}/{$attachmentId}";
+
+        $disk = Storage::disk('s3');
+
+        if (! $disk->exists($stagedPath)) {
+            throw new \RuntimeException(
+                'The staged S3 object does not exist.'
+            );
+        }
+
+        if (! $disk->exists($permanentPath)) {
+            $copied = $disk->copy(
+                $stagedPath,
+                $permanentPath,
+            );
+
+            if (! $copied) {
+                throw new \RuntimeException(
+                    'Unable to copy and promote the staged S3 object.'
+                );
+            }
+        }
+
+        return $permanentPath;
+    }
 }
