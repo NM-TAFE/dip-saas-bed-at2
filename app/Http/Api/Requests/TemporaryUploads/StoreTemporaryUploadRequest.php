@@ -19,22 +19,25 @@ final class StoreTemporaryUploadRequest extends FormRequest
     {
         return [
             'attachmentable_id' => ['required', 'ulid', 'exists:mongodb.tasks,_id'],
-            'original_name' => ['required', 'string', 'max:255'],
-            'mime_type' => ['nullable', 'string', 'max:255'],
-            'size' => ['required', 'integer', 'min:0'],
+            'file' => [
+                'required',
+                'file',
+                'max:10240', // 10 MB, measured in KiB
+            ],
         ];
     }
 
     public function payload(): NewTemporaryUpload
     {
         $data = $this->validated();
+        $file = $this->file('file');
 
         return new NewTemporaryUpload(
             id: (string) Str::ulid(),
             attachmentableId: $data['attachmentable_id'],
-            originalName: $data['original_name'],
-            mimeType: $data['mime_type'] ?? null,
-            size: (int) $data['size'],
+            originalName: $file->getClientOriginalName(),
+            mimeType: $file->getMimeType(),
+            size: $file->getSize(),
             uploadedBy: (string) $this->user()->getKey(),
         );
     }
