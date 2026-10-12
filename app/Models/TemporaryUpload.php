@@ -15,7 +15,7 @@ final class TemporaryUpload extends Model
     protected $table = 'temporary_uploads';
     protected $hidden = ['_id'];
     protected $appends = ['id'];
-    protected $fillable = ['attachmentable_id', 'attachmentable_type', 'uploaded_by', 'original_name', 'mime_type', 'size', 'status', 'expires_at'];
+    protected $fillable = ['attachmentable_id', 'attachmentable_type', 'uploaded_by', 'original_name', 'mime_type', 'size', 'status', 'staged_path', 'expires_at'];
 
     protected function casts(): array
     {
