@@ -12,6 +12,7 @@ use App\Services\AttachmentStorageService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 use RuntimeException;
 use Throwable;
@@ -45,6 +46,11 @@ final class S3UploadJob implements ShouldQueue
         if ($upload->status === 'completed') {
             return;
         }
+
+        Log::info('Processing temporary S3 upload.', [
+            'temporary_upload_id' => $this->temporaryUploadId,
+            'attempt' => $this->attempts(),
+        ]);
 
         // Mark the upload state as processing for progress communication
         $upload->status = 'processing';
