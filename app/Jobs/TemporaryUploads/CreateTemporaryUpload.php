@@ -19,11 +19,26 @@ final class CreateTemporaryUpload implements ShouldQueue
 
     public function handle(): void
     {
-        // Idempotent the job executes asynchronously, it may be retried on failure.
-        // We want to ensure that retries do not create duplicate TemporaryUpload records
-        TemporaryUpload::query()->firstOrCreate(
-            ['_id' => $this->payload->id],
-            $this->payload->toArray(),
+        // Avoid creating another document if this job is retried.
+        $existing = TemporaryUpload::query()
+            ->whereKey($this->payload->id)
+            ->first();
+
+        if ($existing !== null) {
+            return;
+        }
+
+        // Create the model using the validated payload.
+        $upload = new TemporaryUpload(
+            $this->payload->toArray()
         );
+
+        // Preserve the ULID returned by the StoreController. Effectively returning "_id" & "01M4Q5G36Y2E289HE40P9Y1WFQ"
+        $upload->setAttribute(
+            $upload->getKeyName(),
+            $this->payload->id
+        );
+
+        $upload->save();
     }
 }

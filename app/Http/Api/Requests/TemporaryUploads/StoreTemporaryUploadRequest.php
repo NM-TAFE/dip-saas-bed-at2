@@ -6,6 +6,7 @@ namespace App\Http\Api\Requests\TemporaryUploads;
 
 use App\Http\Payloads\TemporaryUploads\NewTemporaryUpload;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 final class StoreTemporaryUploadRequest extends FormRequest
 {
