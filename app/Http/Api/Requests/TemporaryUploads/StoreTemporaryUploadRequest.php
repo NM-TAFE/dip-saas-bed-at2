@@ -13,6 +13,7 @@ final class StoreTemporaryUploadRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // In the production app this would scoped to the organisation (multi-tenant)
         $user = $this->user();
 
         if ($user === null) {
