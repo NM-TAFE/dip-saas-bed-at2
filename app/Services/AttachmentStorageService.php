@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Attachment;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Throwable;
 
 final class AttachmentStorageService
@@ -32,5 +33,32 @@ final class AttachmentStorageService
 
             return false;
         }
+    }
+
+    /**
+     * Stage an uploaded file in private S3 storage.
+     *
+     * @throws \RuntimeException
+     */
+    public function stage(
+        UploadedFile $file,
+        string $temporaryUploadId,
+    ): string {
+        $directory = "temporary-uploads/{$temporaryUploadId}";
+
+        $path = Storage::disk('s3')->putFileAs(
+            $directory,
+            $file,
+            'source',
+            ['visibility' => 'private'],
+        );
+
+        if ($path === false) {
+            throw new \RuntimeException(
+                'Unable to stage the uploaded file in S3.'
+            );
+        }
+
+        return $path;
     }
 }
