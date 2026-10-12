@@ -14,6 +14,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
 
 use RuntimeException;
+use Throwable;
 
 final class S3UploadJob implements ShouldQueue
 {
@@ -97,5 +98,36 @@ final class S3UploadJob implements ShouldQueue
         // Use the state to mark the upload as completed.
         $upload->status = 'completed';
         $upload->save();
+    }
+
+
+    /**
+     * Called when Laravel determines that the job has failed permanently.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        $upload = TemporaryUpload::query()
+            ->whereKey($this->temporaryUploadId)
+            ->first();
+
+        if ($upload === null) {
+            return;
+        }
+
+        // Never overwrite a successfully completed upload.
+        if ($upload->status === 'completed') {
+            return;
+        }
+
+        $upload->status = 'failed';
+
+        // Store a safe, general message for the API.
+        $upload->error_message = 'The file could not be processed.';
+
+        $upload->save();
+
+        if ($exception !== null) {
+            report($exception);
+        }
     }
 }
