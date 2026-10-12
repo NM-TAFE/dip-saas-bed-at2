@@ -8,14 +8,17 @@ use App\Http\Api\Requests\TemporaryUploads\StoreTemporaryUploadRequest;
 use App\Http\Api\Responses\MessageResponse;
 use App\Models\TemporaryUpload;
 use App\Services\AttachmentStorageService;
+use App\Jobs\TemporaryUploads\S3UploadJob;
+
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Throwable;
 
 final readonly class StoreController
 {
     public function __construct(
         private AttachmentStorageService $storage,
+        private Dispatcher $bus,
     ) {}
 
     public function __invoke(
@@ -57,6 +60,14 @@ final readonly class StoreController
 
             throw $exception;
         }
+
+        // Dispatch the trigger job only after the metadata has been persisted.
+        // Note: if MongoDB creation fails, the controller attempts to delete the staged S3 object.
+        $this->bus->dispatch(
+            new S3UploadJob(
+                temporaryUploadId: $payload->id,
+            ),
+        );
 
         return new MessageResponse(
             message: 'Your file has been staged for processing.',
