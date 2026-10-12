@@ -11,22 +11,22 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     public const CLIENT_EMAIL = 'client@example.com';
-
     public const CLIENT_PASSWORD = 'password';
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
+        // Create the test client only if it does not exist.
+        User::query()->firstOrCreate(
+            ['email' => self::CLIENT_EMAIL],
+            [
+                'name' => 'Test Client',
+                'password' => self::CLIENT_PASSWORD,
+            ]
+        );
+
+        // Seed Tasks after the user exists.
         $this->call([
             TaskSeeder::class,
-        ]);
-
-        User::factory()->create([
-            'name' => 'Test Client',
-            'email' => self::CLIENT_EMAIL,
-            'password' => self::CLIENT_PASSWORD,
         ]);
     }
 }
