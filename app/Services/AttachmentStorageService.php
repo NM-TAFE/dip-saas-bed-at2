@@ -12,6 +12,9 @@ use Throwable;
 
 final class AttachmentStorageService
 {
+    /**
+     * Delete a permanent attachment S3 object after successful processing.
+     */
     public function delete(Attachment $attachment): bool
     {
         if ($attachment->path === '') {
