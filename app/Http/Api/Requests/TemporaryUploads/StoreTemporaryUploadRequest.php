@@ -27,7 +27,9 @@ final class StoreTemporaryUploadRequest extends FormRequest
     public function payload(): NewTemporaryUpload
     {
         $data = $this->validated();
+
         return new NewTemporaryUpload(
+            id: (string) Str::ulid(),
             attachmentableId: $data['attachmentable_id'],
             originalName: $data['original_name'],
             mimeType: $data['mime_type'] ?? null,
