@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Api\Requests\TemporaryUploads;
 
 use App\Http\Payloads\TemporaryUploads\NewTemporaryUpload;
+use App\Models\Task;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 
@@ -12,7 +13,22 @@ final class StoreTemporaryUploadRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        $taskId = $this->input('attachmentable_id');
+
+        if (! is_string($taskId)) {
+            return false;
+        }
+
+        return Task::query()
+            ->whereKey($taskId)
+            ->where('assigned_to', (string) $user->getKey())
+            ->exists();
     }
 
     public function rules(): array
