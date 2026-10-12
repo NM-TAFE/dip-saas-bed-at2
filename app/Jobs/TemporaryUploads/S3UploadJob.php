@@ -8,9 +8,11 @@ use App\Models\Attachment;
 use App\Http\Payloads\Attachments\NewAttachment;
 use App\Models\TemporaryUpload;
 use App\Services\AttachmentStorageService;
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
+
 use RuntimeException;
 
 final class S3UploadJob implements ShouldQueue

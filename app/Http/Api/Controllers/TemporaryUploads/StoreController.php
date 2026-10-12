@@ -12,6 +12,8 @@ use App\Jobs\TemporaryUploads\S3UploadJob;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Bus\Dispatcher;
+
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 final readonly class StoreController
