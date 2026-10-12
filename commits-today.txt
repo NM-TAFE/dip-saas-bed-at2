@@ -1,0 +1,36 @@
+73c0abf feat: update seeder to aid S3 testing
+e42bed5 feat: add staging clean up for S3 job
+21204b0 feat: add deleted method for staged toStorage Service
+dba470c feat: add deleted to storage service
+2c94e89 feat: return the id and error message to the client
+965d1c7 docs: add note on multitenancy in S3 Request
+9b79830 feat: add a check to make sure the task owner can upload to S3
+9762762 update failed job queuing to use databse uuids not mongodb uuids
+1d03c58 feat: add logging to handle S3 Job
+055207c feat: add failed method to S3 job
+0a19b83 bug: update config for s3 to throw s3 error
+1d3d296 fix: add response import to TU store controller
+583d4a2 feat: update temup store controller to trigger the perm S3 Upload
+c5f2aae feat: update S3 job to use the same Attachment DTO
+2921ef9 feat: update the model to provide the attachment and error
+b103b92 feat: update storage service to copy file to permanent location
+713a234 feat: update TempUp controller as the S3 staging file
+38ddeb5 feat: add temporary path to the model
+f337aac feat: add s3 tempup storage service staging
+4bfa670 feat: update tempup store to handle s3 attributes
+8dd0a74 feat: update job to store, convert and return the mongodb id before persistence
+3139098 fix: add the id metadat back in to the request
+683df10 feat: add tempup model
+3855c49 fix: update typing on tempup payload
+9ce682a feat: make sure to return the meta needed to the first or create.
+e15038e feat: update the Job for asynchonous duplication protection
+fb386cb feat: update the API Message Response class
+75468ee feat: refactor response to use standard api and add metadata
+0901105 feat: tempup resource
+b12cceb feat: tempup request
+3b50ac7 feat: refactor show controller to the architecture
+17fb1f1 feat: refactor storecontroller to the architecture
+1aeebe4 feat: load new route
+7e6ecc9 feat: temp upload routes
+2bb6a14 feat: ttl migration in prep for s3 integration
+39d0899 fix: remove comma in workflow
