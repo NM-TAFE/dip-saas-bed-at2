@@ -11,11 +11,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 final readonly class MessageResponse implements Responsable
 {
-    public function __construct(private string $message, private int $status = Response::HTTP_OK) {}
+    public function __construct(private string $message, private int $status = Response::HTTP_OK, private array $metadata = [],) {}
 
     /** @param Request $request */
     public function toResponse($request): Response
     {
-        return new JsonResponse(data: ['message' => $this->message], status: $this->status, headers: []);
+        return new JsonResponse(data: ['message' => $this->message, ...$this->metadata], status: $this->status, headers: []);
     }
 }
