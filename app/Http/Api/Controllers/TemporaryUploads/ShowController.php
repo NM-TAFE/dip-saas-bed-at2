@@ -10,11 +10,17 @@ use Illuminate\Http\Request;
 
 final readonly class ShowController
 {
-    public function __invoke(Request $request, string $temporaryUpload): TemporaryUploadResource
-    {
-        $upload = TemporaryUpload::query()->whereKey($temporaryUpload)
-            ->where('uploaded_by', (string) $request->user()->getKey())->firstOrFail();
+    public function __invoke(
+        Request $request,
+        TemporaryUpload $temporaryUpload
+    ): TemporaryUploadResource {
 
-        return new TemporaryUploadResource($upload);
+        abort_unless(
+            (string) $temporaryUpload->uploaded_by ===
+                (string) $request->user()->getKey(),
+            404,
+        );
+
+        return new TemporaryUploadResource($temporaryUpload);
     }
 }
