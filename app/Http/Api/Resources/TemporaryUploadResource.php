@@ -18,6 +18,10 @@ final class TemporaryUploadResource extends JsonResource
             'mime_type' => $this->resource->mime_type,
             'size' => $this->resource->size,
             'status' => $this->resource->status,
+            'attachment_id' => $this->resource->attachment_id,
+            'error_message' => $this->resource->status === 'failed'
+                ? $this->resource->error_message
+                : null,
             'expires_at' => $this->resource->expires_at?->toIso8601String(),
         ];
     }
