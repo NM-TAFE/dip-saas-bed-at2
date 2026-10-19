@@ -42,8 +42,14 @@ final class S3UploadJob implements ShouldQueue
             );
         }
 
-        // Dont process completed uploads again, early exit instead.
+        // Retry cleanup for completed uploads without processing them again.
         if ($upload->status === 'completed') {
+            if (! $storage->deleteStaged($upload->staged_path)) {
+                throw new RuntimeException(
+                    'Unable to clean up the staged upload.'
+                );
+            }
+
             return;
         }
 
@@ -107,13 +113,15 @@ final class S3UploadJob implements ShouldQueue
 
 
         // Remove the staged S3 object after successful completion.
-        $deleted = $storage->deleteStaged($upload->staged_path);
-
-        if ($deleted) {
-            Log::info('Temporary S3 upload cleaned up.', [
-                'temporary_upload_id' => $upload->getKey(),
-            ]);
+        if (! $storage->deleteStaged($upload->staged_path)) {
+            throw new RuntimeException(
+                'Unable to clean up the staged upload.'
+            );
         }
+
+        Log::info('Temporary S3 upload cleaned up.', [
+            'temporary_upload_id' => $upload->getKey(),
+        ]);
     }
 
 
