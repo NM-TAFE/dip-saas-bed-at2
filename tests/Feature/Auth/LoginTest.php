@@ -6,12 +6,23 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
 final class LoginTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations {
+        runDatabaseMigrations as protected runVerifiedDatabaseMigrations;
+    }
+
+    public function runDatabaseMigrations(): void
+    {
+        $this->assertSame('testing', app()->environment());
+        $this->assertSame('mongodb', config('database.default'));
+        $this->assertSame('myjamjar_testing', (new User)->getConnection()->getDatabaseName());
+
+        $this->runVerifiedDatabaseMigrations();
+    }
 
     public function test_client_can_log_in(): void
     {

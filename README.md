@@ -155,7 +155,9 @@ Run a focused auth test:
 ```bash
 php artisan test tests/Feature/Auth/LoginTest.php
 ```
-### Code Style
+### Code Style — Laravel Pint
+
+Pint formats PHP code. It is included in the project's development dependencies; run `composer install` to install it. Run these commands from the project root.
 
 Check code style without modifying files:
 
@@ -168,6 +170,45 @@ Apply Pint fixes locally:
 ```bash
 ./vendor/bin/pint
 ```
+
+Check or format a specific file:
+
+```bash
+./vendor/bin/pint --test tests/Feature/Auth/LoginTest.php
+./vendor/bin/pint tests/Feature/Auth/LoginTest.php
+```
+
+Review the resulting diff before committing formatting changes.
+
+### Static Analysis — PHPStan and Larastan
+
+PHPStan checks PHP code for potential errors without running the test suite. Larastan adds Laravel-aware analysis and is included in the project's development dependencies, so `composer install` installs the required tools.
+
+Run analysis from the project root:
+
+```bash
+./vendor/bin/phpstan analyse --memory-limit=1G
+```
+
+PHPStan automatically reads `phpstan.neon`. The configuration uses level **5**, analyses `app`, `database`, and `routes`, and stores its cache in `storage/framework/cache/phpstan`.
+
+Analyse a specific file while retaining the configured rules:
+
+```bash
+./vendor/bin/phpstan analyse app/Models/User.php --memory-limit=1G
+```
+
+Read each reported file and line number, correct the underlying issue, and rerun analysis. PHPStan reports issues; it does not automatically fix them. Larastan boots the Laravel application during analysis, so the application must have a valid local environment configuration.
+
+Before committing, run formatting checks, static analysis, and tests:
+
+```bash
+./vendor/bin/pint --test
+./vendor/bin/phpstan analyse --memory-limit=1G
+composer test
+```
+
+These checks serve different purposes: formatting consistency, static code checks, and runtime behaviour. Database-backed tests require the dedicated testing database described in the Session 13 lecturer notes.
 
 ### Introspection
 
