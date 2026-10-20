@@ -7,7 +7,8 @@ namespace App\Models;
 use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 use MongoDB\Laravel\Eloquent\DocumentModel;
 
-final class PersonalAccessToken extends SanctumPersonalAccessToken
+// Add final when generateing test tokens
+class PersonalAccessToken extends SanctumPersonalAccessToken
 {
     use DocumentModel;
 

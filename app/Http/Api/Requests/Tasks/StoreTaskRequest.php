@@ -50,7 +50,8 @@ final class StoreTaskRequest extends FormRequest
 
         return new NewTask(
             name: (string) $data['name'],
-            description: (string) $data['description'] ?? null,
+            // description: (string) $data['description'] ?? null,
+            description: $data['description'] ?? null,
             status: (string) $data['status'],
             dueDate: $data['due_date'] ?? null,
             user: $data['assigned_to'] ?? null,
