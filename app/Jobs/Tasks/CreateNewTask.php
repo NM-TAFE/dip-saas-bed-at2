@@ -24,7 +24,7 @@ final class CreateNewTask implements ShouldQueue
         );
 
         // NOTE:  the test route needs to be switched on first
-        // SendTaskCreatedWebhook::dispatch($task);
+        SendTaskCreatedWebhook::dispatch($task);
 
         return $task;
     }

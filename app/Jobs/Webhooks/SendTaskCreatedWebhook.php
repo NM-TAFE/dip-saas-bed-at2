@@ -24,7 +24,8 @@ final class SendTaskCreatedWebhook implements ShouldQueue
 
     public function handle(): void
     {
-        $url = config('services.task_webhook.url');
+        // $url = config('services.task_webhook.url');
+        $url = 'https://webhook.site/4afbb771-8fd4-482a-a91a-8dcdcfb96d77';
         $secret = config('services.task_webhook.secret');
         if (! is_string($url) || $url === '') {
             return;
