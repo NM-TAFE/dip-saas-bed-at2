@@ -337,4 +337,34 @@ Results: `/up`, `/horizon`, `/horizon/api/stats` and `/telescope` all return
 
 ### 7. Restart policy, scheduler, `.dockerignore`, minor clean-ups
 
-- [ ] _pending_
+#### 7a. Restart policy
+
+- [x] `restart: unless-stopped` on `app` and `horizon` in `compose.yaml`.
+
+Horizon exits when it crashes or receives `horizon:terminate`, and nothing
+started it again. Horizon workers also keep old code in memory, so after
+changing jobs or app code:
+
+```bash
+docker compose exec horizon php artisan horizon:terminate
+```
+
+Docker restarts the container with the new code. `docker compose stop` still
+stops it for good, since `unless-stopped` respects manual stops.
+
+Check it:
+
+```bash
+docker inspect -f '{{.State.StartedAt}}' dip-saas-bed-at2-horizon-1
+docker compose exec horizon php artisan horizon:terminate
+docker inspect -f '{{.State.StartedAt}} restarts: {{.RestartCount}}' dip-saas-bed-at2-horizon-1
+docker compose exec horizon php artisan horizon:status
+```
+
+Expected result: a new `StartedAt`, `restarts: 1`, and `Horizon is running.`
+
+- [ ] 7b. Scheduler (`horizon:snapshot`, `telescope:prune`)
+- [ ] 7c. Build the image once and share it
+- [ ] 7d. `PHP_CLI_SERVER_WORKERS`
+- [ ] 7e. `.dockerignore`
+- [ ] 7f. `zip` extension
