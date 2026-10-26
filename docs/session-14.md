@@ -396,7 +396,75 @@ docker compose logs scheduler | grep horizon:snapshot   # after the next 5-minut
 Expected result: `schedule:list` shows both tasks, the snapshot reports
 *Metrics snapshot stored successfully*, prune reports *N entries pruned*, and
 the log shows `Running ['artisan' horizon:snapshot] … DONE`.
-- [ ] 7c. Build the image once and share it
+#### 7c. Build the image once and share it
+
+- [x] `app`, `horizon` and `scheduler` each had their own `build:` block, so
+  Compose built three identical images (`dip-saas-bed-at2-app`, `-horizon`,
+  `-scheduler`) and the same settings were repeated three times.
+
+`compose.yaml` now has a shared `x-app` block merged into each service with `<<: *app`:
+
+```yaml
+# Shared by app, horizon and scheduler. Only app builds the image;
+# the others reuse it by name (never pulled from Docker Hub).
+x-app: &app
+  image: dip-saas-bed-php
+  pull_policy: never
+  working_dir: /var/www/html
+  volumes:
+    - ./:/var/www/html
+  environment: *app-env
+  depends_on:
+    redis:
+      condition: service_healthy
+    mysql:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  app:
+    <<: *app
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
+
+  horizon:
+    <<: *app
+    command: php artisan horizon
+
+  scheduler:
+    <<: *app
+    command: php artisan schedule:work
+```
+
+- `build:` is on `app` only. If every service had `build:`, Compose would still
+  run the build three times, even with a shared `image:` name.
+- `pull_policy: never` is needed on a fresh machine. Without it, Compose first
+  tries to pull `dip-saas-bed-php` from Docker Hub for `horizon` and `scheduler`
+  and prints *"pull access denied"* errors before it builds.
+- A service's own key replaces the shared one entirely (e.g. `environment`), so
+  extra env vars for one service must merge `*app-env` too (see 7d).
+- After changing the Dockerfile: `docker compose build && docker compose up -d`.
+
+Check it:
+
+```bash
+docker compose config                       # resolved services match the old file, plus image:
+docker compose down && docker rmi dip-saas-bed-php
+docker compose up -d --wait                 # one "Building … Built", no "Pulling"
+docker compose ps --format 'table {{.Service}}\t{{.Image}}'
+docker images | grep dip-saas-bed
+```
+
+Expected result: `app`, `horizon` and `scheduler` all show `dip-saas-bed-php`,
+there is only one project image, and `/up`, `/horizon/api/stats` and
+`/telescope` return 200.
+
+> Old per-service images from before this change can be removed with
+> `docker rmi dip-saas-bed-at2-app dip-saas-bed-at2-horizon dip-saas-bed-at2-scheduler`.
 - [ ] 7d. `PHP_CLI_SERVER_WORKERS`
 - [ ] 7e. `.dockerignore`
 - [ ] 7f. `zip` extension

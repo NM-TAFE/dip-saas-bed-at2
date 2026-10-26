@@ -6,60 +6,43 @@ x-app-env: &app-env
   TELESCOPE_ENABLED: "true"
   TELESCOPE_DB_HOST: mysql
 
+# Shared by app, horizon and scheduler. Only app builds the image;
+# the others reuse it by name (never pulled from Docker Hub).
+x-app: &app
+  image: dip-saas-bed-php
+  pull_policy: never
+  working_dir: /var/www/html
+  volumes:
+    - ./:/var/www/html
+  environment: *app-env
+  depends_on:
+    redis:
+      condition: service_healthy
+    mysql:
+      condition: service_healthy
+  restart: unless-stopped
+
 services:
   app:
+    <<: *app
     build:
       context: .
       dockerfile: docker/Dockerfile
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    environment: *app-env
     ports:
       - "127.0.0.1:8000:8000"
-    depends_on:
-      redis:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
     # --no-reload keeps the x-app-env overrides; without it serve strips them
     # from the request worker. Restart the service after editing .env.
     command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
-    restart: unless-stopped
 
   horizon:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    environment: *app-env
-    depends_on:
-      redis:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
+    <<: *app
+    # restart: unless-stopped brings it back after horizon:terminate.
     command: php artisan horizon
-    # horizon:terminate exits cleanly; this brings it back with fresh code.
-    restart: unless-stopped
 
   # Runs routes/console.php schedule (Horizon metrics, Telescope pruning).
   scheduler:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    environment: *app-env
-    depends_on:
-      redis:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
+    <<: *app
     command: php artisan schedule:work
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
