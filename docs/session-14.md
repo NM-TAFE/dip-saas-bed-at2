@@ -4,12 +4,46 @@ Running the Laravel API in Docker with Horizon (queue dashboard) and Telescope
 (debug dashboard). MongoDB stays on Atlas (cloud), so there is no Mongo
 container.
 
-| Service   | Purpose                                  |
-|-----------|------------------------------------------|
-| `app`     | Laravel API (`php artisan serve`) on `127.0.0.1:8000` |
-| `horizon` | Queue workers (`php artisan horizon`)    |
-| `redis`   | Queue backend for Horizon                |
-| `mysql`   | Telescope storage only (Telescope does not support MongoDB) |
+## Quick reference
+
+Run from the project folder.
+
+```bash
+# Start everything (builds the image the first time)
+docker compose up -d
+
+# Stop everything (keeps your data)
+docker compose stop
+
+# Start again after a stop
+docker compose start
+
+# See what's running
+docker compose ps
+
+# After editing .env
+docker compose restart app horizon scheduler
+
+# After changing job or app code that Horizon runs
+docker compose exec horizon php artisan horizon:terminate
+
+# Stop and remove the containers (data is kept)
+docker compose down
+```
+
+> Don't add `-v` to `docker compose down` unless you mean to. It also deletes
+> the MySQL and Redis data (Telescope entries and Horizon history).
+
+Dashboards: <http://127.0.0.1:8000/horizon> and <http://127.0.0.1:8000/telescope>.
+First time on a new machine? See [First full start](#first-full-start) (step 6).
+
+| Service     | Purpose                                  |
+|-------------|------------------------------------------|
+| `app`       | Laravel API (`php artisan serve`) on `127.0.0.1:8000` |
+| `horizon`   | Queue workers (`php artisan horizon`)    |
+| `scheduler` | Scheduled tasks (`php artisan schedule:work`) |
+| `redis`     | Queue backend for Horizon                |
+| `mysql`     | Telescope storage only (Telescope does not support MongoDB) |
 
 ## Why the extra steps?
 
