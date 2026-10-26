@@ -363,7 +363,39 @@ docker compose exec horizon php artisan horizon:status
 
 Expected result: a new `StartedAt`, `restarts: 1`, and `Horizon is running.`
 
-- [ ] 7b. Scheduler (`horizon:snapshot`, `telescope:prune`)
+#### 7b. Scheduler
+
+- [x] New `scheduler` service in `compose.yaml` running `php artisan schedule:work`,
+  with the same build, volume, environment, `depends_on` and restart policy as `horizon`.
+
+`routes/console.php`:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+// Run by the `scheduler` service in compose.yaml.
+Schedule::command('horizon:snapshot')->everyFiveMinutes();
+Schedule::command('telescope:prune --hours=48')->daily();
+```
+
+- `horizon:snapshot`: Horizon's *Metrics* page (job throughput and runtime) stays
+  empty without it.
+- `telescope:prune --hours=48`: deletes Telescope entries older than 48 hours so
+  MySQL doesn't keep growing.
+
+Check it:
+
+```bash
+docker compose up -d --wait scheduler
+docker compose exec scheduler php artisan schedule:list
+docker compose exec scheduler php artisan horizon:snapshot
+docker compose exec scheduler php artisan telescope:prune --hours=48
+docker compose logs scheduler | grep horizon:snapshot   # after the next 5-minute mark
+```
+
+Expected result: `schedule:list` shows both tasks, the snapshot reports
+*Metrics snapshot stored successfully*, prune reports *N entries pruned*, and
+the log shows `Running ['artisan' horizon:snapshot] … DONE`.
 - [ ] 7c. Build the image once and share it
 - [ ] 7d. `PHP_CLI_SERVER_WORKERS`
 - [ ] 7e. `.dockerignore`

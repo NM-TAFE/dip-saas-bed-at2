@@ -44,6 +44,23 @@ services:
     # horizon:terminate exits cleanly; this brings it back with fresh code.
     restart: unless-stopped
 
+  # Runs routes/console.php schedule (Horizon metrics, Telescope pruning).
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    environment: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    command: php artisan schedule:work
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
