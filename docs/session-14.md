@@ -285,8 +285,34 @@ awk -F= '/^(TELESCOPE_DB_PASSWORD|MYSQL_ROOT_PASSWORD)=/{print $1, length($2)}' 
 ```
 
 > MySQL only applies these passwords the **first time** it creates the
-> `mysql_data` volume. To change them later, run `docker compose down -v` (this
-> deletes Telescope data) and start again.
+> `mysql_data` volume. Changing `.env` later does nothing until the volume is
+> recreated.
+
+#### Changing the passwords
+
+Needed if they are ever exposed (e.g. `docker compose config` output shared;
+see 7d). Mac / Linux / Git Bash: replace both values in `.env` in place
+without printing them:
+
+```bash
+sed -i.bak -E "s/^TELESCOPE_DB_PASSWORD=.*/TELESCOPE_DB_PASSWORD=$(openssl rand -hex 24)/; s/^MYSQL_ROOT_PASSWORD=.*/MYSQL_ROOT_PASSWORD=$(openssl rand -hex 24)/" .env && rm .env.bak
+awk -F= '/^(TELESCOPE_DB_PASSWORD|MYSQL_ROOT_PASSWORD)=/{print $1, length($2)}' .env
+```
+
+(`-i.bak` works with both macOS and GNU `sed`.) On Windows, generate new values
+with the PowerShell command above and paste them into `.env`.
+
+Then recreate the volumes and the Telescope tables:
+
+```bash
+docker compose down -v      # deletes MySQL (Telescope) and Redis (Horizon) data
+docker compose up -d --wait
+docker compose exec app php artisan migrate --database=telescope --path=database/migrations/telescope --force
+docker compose exec mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -utelescope -e "select 1" >/dev/null && echo "telescope user login: ok"'
+```
+
+Expected result: both names print length 48, all services are healthy, the
+migration reports `DONE`, and `telescope user login: ok`.
 
 #### Fix found while testing: `php artisan serve --no-reload`
 
