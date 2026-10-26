@@ -3,6 +3,8 @@
 x-app-env: &app-env
   REDIS_HOST: redis
   QUEUE_CONNECTION: redis
+  TELESCOPE_ENABLED: "true"
+  TELESCOPE_DB_HOST: mysql
 
 services:
   app:

@@ -69,7 +69,7 @@ Files these commands created or changed:
 | `app/Providers/TelescopeServiceProvider.php` | Telescope filters and the `viewTelescope` gate (who can open `/telescope` outside `local`) |
 | `config/horizon.php` | Horizon workers, queues and environments |
 | `config/telescope.php` | Telescope storage connection and watchers |
-| `database/migrations/…_create_telescope_entries_table.php` | Telescope tables (run against MySQL in step 5) |
+| `database/migrations/…_create_telescope_entries_table.php` | Telescope tables (moved to `database/migrations/telescope/` and run against MySQL in step 5) |
 | `bootstrap/providers.php` | Both new providers registered. The installer rewrote the file to use fully qualified class names instead of `use` imports |
 
 ### 2. Add `pcntl` to the Dockerfile
@@ -171,7 +171,78 @@ serialising a closure written in `--execute` code.
 
 ### 5. Give Telescope its own MySQL connection
 
-- [ ] _pending_
+- [x] Telescope can't store entries in MongoDB. Out of the box it uses
+  `env('DB_CONNECTION')` (`mongodb` here), and the stock `mysql` connection reads
+  the same `DB_DATABASE`/`DB_HOST` vars as MongoDB.
+
+`config/database.php`: new `telescope` connection with its own variables:
+
+```php
+'telescope' => [
+    'driver' => 'mysql',
+    'host' => env('TELESCOPE_DB_HOST', '127.0.0.1'),
+    'port' => env('TELESCOPE_DB_PORT', '3306'),
+    'database' => env('TELESCOPE_DB_DATABASE', 'telescope'),
+    'username' => env('TELESCOPE_DB_USERNAME', 'telescope'),
+    'password' => env('TELESCOPE_DB_PASSWORD', ''),
+    // charset, collation, strict… as the stock mysql connection
+],
+```
+
+`config/telescope.php`:
+
+```diff
+-    'enabled' => env('TELESCOPE_ENABLED', true),
++    'enabled' => env('TELESCOPE_ENABLED', false),
+ ...
+-            'connection' => env('DB_CONNECTION', 'mysql'),
++            'connection' => env('TELESCOPE_DB_CONNECTION', 'telescope'),
+```
+
+`compose.yaml` shared block:
+
+```yaml
+  TELESCOPE_ENABLED: "true"
+  TELESCOPE_DB_HOST: mysql
+```
+
+- Telescope is **off by default**, so the app runs outside Docker without MySQL.
+  Compose turns it on in the containers. Tests already disable it in `phpunit.xml`.
+- The database name and username match the `mysql` service (`telescope`), so only
+  the password needs setting (step 6).
+
+#### Running the Telescope migration
+
+The Telescope migration was moved to its own folder:
+
+```bash
+mkdir -p database/migrations/telescope
+git mv database/migrations/2026_10_26_050911_create_telescope_entries_table.php database/migrations/telescope/
+```
+
+A plain `php artisan migrate` only scans the top level of
+`database/migrations/`, so it keeps running just the app's MongoDB migrations.
+Otherwise it would try to create the Telescope tables too, failing on the host
+(no MySQL) and in Docker (tables already exist).
+
+Create the Telescope tables with its own command, tracked in MySQL:
+
+```bash
+docker compose run --rm app php artisan migrate --database=telescope --path=database/migrations/telescope
+```
+
+Check it (with dummy passwords from step 3; `-e` is needed until the password is in `.env`):
+
+```bash
+docker compose up -d --wait mysql redis
+docker compose run --rm --no-deps -e TELESCOPE_DB_PASSWORD=dummy app sh -c "php artisan migrate --database=telescope --path=database/migrations/telescope --force && php artisan inspire"
+docker compose run --rm --no-deps -e TELESCOPE_DB_PASSWORD=dummy app php artisan tinker --execute 'echo DB::connection("telescope")->table("telescope_entries")->count(), PHP_EOL;'
+docker compose down -v
+```
+
+Expected result: tables `migrations`, `telescope_entries`,
+`telescope_entries_tags` and `telescope_monitoring` exist in MySQL, and the entry
+count is above 0.
 
 ### 6. Required `.env` values for Compose
 
