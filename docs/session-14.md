@@ -528,5 +528,45 @@ Expected result: `4`, and 5 `php -S` processes (1 main process + 4 workers).
 > including `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` from `.env`. Don't paste
 > its output into chats, issues or screenshots. To check one value, use
 > `docker compose exec <service> printenv <NAME>`.
-- [ ] 7e. `.dockerignore`
+#### 7e. `.dockerignore`
+
+- [x] Added as a **safeguard**, not for speed.
+
+The planned reason (faster builds) turned out not to apply. With BuildKit (the
+default in Docker Desktop), a build only sends files that a `COPY`/`ADD` asks
+for. `docker/Dockerfile` copies no project files, since the code is bind-mounted,
+so the build context was already **2 bytes**:
+
+```bash
+docker builder prune -f
+docker compose build --progress=plain app 2>&1 | grep 'transferring context'
+# transferring context: 2B done
+```
+
+The risk is a later `COPY . .` (e.g. a production image), which would bake
+`.env` (Atlas URI, MySQL passwords), `vendor` and `node_modules` into the image.
+`.dockerignore` excludes:
+
+| Pattern | Why |
+|---------|-----|
+| `.env`, `.env.*` (keeps `!.env.example`) | Secrets |
+| `vendor`, `node_modules` | ~316 MB; host-built, install inside the image instead |
+| `.git` | History, not needed in an image |
+| `storage/app/*`, `storage/logs/*`, `storage/framework/{cache,sessions,views}/*`, `bootstrap/cache/*.php` | Local uploads, logs and caches |
+| `.DS_Store`, `.idea`, `.vscode` | Editor / OS clutter |
+
+Check it with a throwaway `COPY . .` build (Dockerfile kept outside the repo):
+
+```bash
+printf 'FROM alpine:3.20\nCOPY . /ctx\nRUN cd /ctx && for f in .env .env.testing .env.example vendor node_modules .git artisan; do [ -e "$f" ] && echo "present  $f" || echo "excluded $f"; done && du -sh /ctx\n' > /tmp/Dockerfile.ignore-test
+docker build --no-cache --progress=plain -f /tmp/Dockerfile.ignore-test -t ignore-test . 2>&1 | grep -E 'transferring context|present|excluded|/ctx$'
+docker rmi ignore-test && rm /tmp/Dockerfile.ignore-test
+```
+
+Expected result: `.env`, `.env.testing`, `vendor`, `node_modules` and `.git`
+are *excluded*, while `.env.example` and `artisan` are *present*. The context is
+under 1 MB, compared with ~340 MB without the file.
+
+Windows: run the check from Git Bash, or use `$env:TEMP\Dockerfile.ignore-test`
+in PowerShell.
 - [ ] 7f. `zip` extension
