@@ -23,6 +23,29 @@ Telescope out of the box:
 5. Telescope stores to `DB_CONNECTION` (`mongodb`) by default, and the stock
    `mysql` connection shares `DB_*` env vars with MongoDB.
 
+## Mac and Windows
+
+Only Docker Desktop is needed on either OS. On Windows the repo can be cloned
+anywhere (e.g. `C:\Users\you\code\...`); no WSL setup is required.
+
+- **Run Composer in the container, not on the host.** Horizon requires
+  `ext-pcntl` and `ext-posix`, which don't exist in PHP on Windows, so
+  `composer install` on a Windows host fails. This works on any OS:
+
+  ```bash
+  docker compose run --rm --no-deps app composer install
+  ```
+
+- **Windows speed:** the project folder is bind-mounted into the containers.
+  Mounts from a Windows drive are slower than on Mac, so the first requests and
+  Horizon startup can lag. This is expected; it does not affect correctness.
+- **Line endings:** `.gitattributes` has `* text=auto eol=lf`, so Windows
+  checkouts keep LF endings and the Dockerfile and `artisan` work unchanged.
+- **Docker-only settings live in `compose.yaml`** (see step 3), so no one has to
+  edit `.env` differently for their OS.
+- Images are multi-arch (`php`, `redis`, `mysql`), so Apple Silicon and
+  x86 machines pull the right build automatically.
+
 ## Steps
 
 ### 1. Install the packages
@@ -78,7 +101,43 @@ Expected output: `mongodb`, `pcntl`, `pdo_mysql`, `posix`, `redis`.
 
 ### 3. Point Redis at the `redis` service
 
-- [ ] _pending_
+- [x] Inside a container `127.0.0.1` is the container itself, so `REDIS_HOST`
+  must be the Compose service name `redis`.
+
+Docker-only values go in a shared `environment` block in `compose.yaml`, not
+`.env`. Real environment variables take precedence over `.env` in Laravel, so
+the containers use `redis` while `php artisan` on the host still uses
+`127.0.0.1`. This works the same on Mac and Windows.
+
+```yaml
+x-app-env: &app-env
+  REDIS_HOST: redis
+
+services:
+  app:
+    environment: *app-env
+  horizon:
+    environment: *app-env
+```
+
+Check it (the inline dummy passwords only satisfy Compose's variable check until step 6):
+
+```bash
+# Mac / Linux / Git Bash
+export TELESCOPE_DB_PASSWORD=dummy MYSQL_ROOT_PASSWORD=dummy
+# Windows PowerShell
+# $env:TELESCOPE_DB_PASSWORD="dummy"; $env:MYSQL_ROOT_PASSWORD="dummy"
+
+docker compose up -d redis
+docker compose run --rm --no-deps app php artisan tinker --execute 'echo config("database.redis.default.host"), " -> ", Illuminate\Support\Facades\Redis::ping() ? "PONG" : "fail", PHP_EOL;'
+docker compose down
+docker volume rm dip-saas-bed-at2_mysql_data   # test run creates an empty one
+```
+
+Expected output: `redis -> PONG`.
+
+> If you ever run `php artisan config:cache`, the cached config ignores
+> environment variables. Run `php artisan config:clear` before using Docker.
 
 ### 4. Send queued jobs to Redis
 

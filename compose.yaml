@@ -1,3 +1,8 @@
+# Docker-only overrides; these win over .env inside the containers,
+# so .env keeps working for `php artisan` on the host.
+x-app-env: &app-env
+  REDIS_HOST: redis
+
 services:
   app:
     build:
@@ -6,6 +11,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+    environment: *app-env
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -22,6 +28,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+    environment: *app-env
     depends_on:
       redis:
         condition: service_healthy
