@@ -2,6 +2,7 @@
 # so .env keeps working for `php artisan` on the host.
 x-app-env: &app-env
   REDIS_HOST: redis
+  QUEUE_CONNECTION: redis
 
 services:
   app:

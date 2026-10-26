@@ -141,7 +141,33 @@ Expected output: `redis -> PONG`.
 
 ### 4. Send queued jobs to Redis
 
-- [ ] _pending_
+- [x] `.env` has `QUEUE_CONNECTION=database`, which uses the MongoDB queue driver.
+  Horizon only processes the `redis` connection (`config/horizon.php` supervisor
+  `'connection' => 'redis'`), so in Docker jobs must go to Redis.
+
+Added to the shared block in `compose.yaml`:
+
+```yaml
+x-app-env: &app-env
+  REDIS_HOST: redis
+  QUEUE_CONNECTION: redis
+```
+
+- Outside Docker, `.env` still uses the MongoDB queue (`php artisan queue:work`).
+- Failed jobs are still recorded in MongoDB (`QUEUE_FAILED_DRIVER` `database-uuids`).
+  Horizon also lists them on its *Failed Jobs* page.
+
+Check a job lands on Redis (with the dummy passwords from step 3):
+
+```bash
+docker compose up -d redis
+docker compose run --rm --no-deps app php artisan tinker --execute 'Illuminate\Support\Facades\Queue::push(fn () => null); echo config("queue.default"), " -> jobs on redis default queue: ", Illuminate\Support\Facades\Queue::size(), PHP_EOL;'
+docker compose down -v   # -v throws away the test job and volumes
+```
+
+Expected output: `redis -> jobs on redis default queue: 1`. A
+`file_get_contents(eval()'d code)` warning is harmless: it comes from Tinker
+serialising a closure written in `--execute` code.
 
 ### 5. Give Telescope its own MySQL connection
 
