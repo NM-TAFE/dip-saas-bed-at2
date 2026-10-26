@@ -28,6 +28,11 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    environment:
+      <<: *app-env
+      # Parallel request workers so dashboard polling doesn't queue behind
+      # API calls. Only honoured with --no-reload.
+      PHP_CLI_SERVER_WORKERS: 4
     ports:
       - "127.0.0.1:8000:8000"
     # --no-reload keeps the x-app-env overrides; without it serve strips them

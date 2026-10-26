@@ -465,6 +465,42 @@ there is only one project image, and `/up`, `/horizon/api/stats` and
 
 > Old per-service images from before this change can be removed with
 > `docker rmi dip-saas-bed-at2-app dip-saas-bed-at2-horizon dip-saas-bed-at2-scheduler`.
-- [ ] 7d. `PHP_CLI_SERVER_WORKERS`
+#### 7d. `PHP_CLI_SERVER_WORKERS`
+
+- [x] `php artisan serve` handles one request at a time by default. The Horizon
+  and Telescope dashboards poll their APIs every few seconds, so their requests
+  queue behind API calls, which is very noticeable on Windows (slower mounts).
+
+`compose.yaml` (`app` only):
+
+```yaml
+  app:
+    <<: *app
+    environment:
+      <<: *app-env
+      # Parallel request workers so dashboard polling doesn't queue behind
+      # API calls. Only honoured with --no-reload.
+      PHP_CLI_SERVER_WORKERS: 4
+```
+
+- Laravel only passes `PHP_CLI_SERVER_WORKERS` to PHP's built-in server when
+  `--no-reload` is set (step 6). Otherwise it warns and starts a single worker.
+- `environment` must merge `<<: *app-env`, because a service's own `environment`
+  replaces the one from `x-app` entirely (7c).
+
+Check it:
+
+```bash
+docker compose up -d --wait app
+docker compose exec app printenv PHP_CLI_SERVER_WORKERS
+docker compose exec app sh -c 'for p in /proc/[0-9]*; do tr "\0" " " < $p/cmdline 2>/dev/null; echo; done | grep -c "^/usr/local/bin/php -S"'
+```
+
+Expected result: `4`, and 5 `php -S` processes (1 main process + 4 workers).
+
+> **Careful with `docker compose config`.** It prints the fully resolved file,
+> including `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` from `.env`. Don't paste
+> its output into chats, issues or screenshots. To check one value, use
+> `docker compose exec <service> printenv <NAME>`.
 - [ ] 7e. `.dockerignore`
 - [ ] 7f. `zip` extension
