@@ -569,4 +569,52 @@ under 1 MB, compared with ~340 MB without the file.
 
 Windows: run the check from Git Bash, or use `$env:TEMP\Dockerfile.ignore-test`
 in PowerShell.
-- [ ] 7f. `zip` extension
+#### 7f. `zip` extension
+
+- [x] The Dockerfile installed `libzip-dev` (the zip library headers) but never
+  built the PHP `zip` extension, so Composer fell back to the `unzip` command.
+
+`docker/Dockerfile`:
+
+```diff
+-    && docker-php-ext-install pdo_mysql pcntl \
++    && docker-php-ext-install pdo_mysql pcntl zip \
+```
+
+Rebuild and check:
+
+```bash
+docker compose build app && docker compose up -d --wait
+docker compose run --rm --no-deps app php -m | grep -iE '^(zip|pcntl|posix|mongodb|redis|pdo_mysql)$'
+docker compose run --rm --no-deps app composer diagnose | grep -i zip
+```
+
+Expected result: all six extensions are listed, and `composer diagnose` reports
+`zip: extension present` (previously `zip: extension not loaded`).
+
+> Changing the `RUN` line rebuilds the whole layer, including compiling the
+> `mongodb` PECL extension, so expect a rebuild of about 2–3 minutes. Later
+> builds are cached.
+
+## Not done
+
+- **Expose MySQL on `127.0.0.1:3306`:** skipped. It is only needed to browse
+  Telescope tables in a GUI client, and it would clash with any MySQL already
+  running locally on 3306. To add it: `ports: ["127.0.0.1:3306:3306"]` on `mysql`.
+- **"3 high vulnerabilities" warning on `FROM php:8.5-cli`:** reported by the
+  editor's Docker extension for the official base image, not for anything added
+  here. It is acceptable for a local dev image. Run `docker compose build --pull`
+  now and then to pick up patched base images.
+
+## Final check
+
+```bash
+docker compose up -d --wait
+docker compose ps
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/up
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/horizon/api/stats
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/telescope
+```
+
+Expected result: five services up (`app`, `horizon`, `scheduler`, `mysql`,
+`redis`), and each URL returns `200`.
