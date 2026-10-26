@@ -51,7 +51,30 @@ Files these commands created or changed:
 
 ### 2. Add `pcntl` to the Dockerfile
 
-- [ ] _pending_
+- [x] Horizon uses `pcntl` to start, signal and stop its worker processes. The
+  official `php` image includes `posix` but not `pcntl`, so it has to be compiled in.
+
+`docker/Dockerfile`:
+
+```diff
+-    && docker-php-ext-install pdo_mysql \
++    && docker-php-ext-install pdo_mysql pcntl \
+```
+
+Check the image has every extension the app needs:
+
+```bash
+docker build -f docker/Dockerfile -t saas-bed-php:check .
+docker run --rm saas-bed-php:check php -m | grep -iE '^(pcntl|posix|mongodb|redis|pdo_mysql)$'
+docker rmi saas-bed-php:check
+```
+
+Expected output: `mongodb`, `pcntl`, `pdo_mysql`, `posix`, `redis`.
+
+> `docker compose build` fails with *"required variable TELESCOPE_DB_PASSWORD is
+> missing a value"* until the step 6 `.env` values exist. Compose checks
+> variables before it builds anything, which is why this check uses `docker build`
+> directly.
 
 ### 3. Point Redis at the `redis` service
 
