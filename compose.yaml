@@ -22,7 +22,9 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    # --no-reload keeps the x-app-env overrides; without it serve strips them
+    # from the request worker. Restart the service after editing .env.
+    command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
 
   horizon:
     build:

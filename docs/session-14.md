@@ -246,7 +246,94 @@ count is above 0.
 
 ### 6. Required `.env` values for Compose
 
-- [ ] _pending_
+- [x] `compose.yaml` refuses to start until `TELESCOPE_DB_PASSWORD` and
+  `MYSQL_ROOT_PASSWORD` are set. Compose reads them from `.env` for the `mysql`
+  service, and Laravel reads the same `.env` for the `telescope` connection, so
+  they always match.
+
+`.env.example` (committed) has blank entries:
+
+```dotenv
+# Docker only: MySQL for Telescope (required by compose.yaml).
+# Generate each with: openssl rand -hex 24
+TELESCOPE_DB_PASSWORD=
+MYSQL_ROOT_PASSWORD=
+```
+
+#### Generating the passwords
+
+`openssl rand -hex 24` prints 24 random bytes as 48 hex characters. Hex is used
+so the password has no characters that need quoting in `.env` or YAML.
+
+Mac / Linux / Git Bash: append both to `.env` without showing them on screen:
+
+```bash
+printf '\n# Docker only: MySQL for Telescope (required by compose.yaml)\nTELESCOPE_DB_PASSWORD=%s\nMYSQL_ROOT_PASSWORD=%s\n' \
+  "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" >> .env
+```
+
+Windows PowerShell (no OpenSSL needed); paste each value into `.env`:
+
+```powershell
+$b = New-Object byte[] 24; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); -join ($b | ForEach-Object { '{0:x2}' -f $_ })
+```
+
+Check both are set without printing them (prints each name and length 48):
+
+```bash
+awk -F= '/^(TELESCOPE_DB_PASSWORD|MYSQL_ROOT_PASSWORD)=/{print $1, length($2)}' .env
+```
+
+> MySQL only applies these passwords the **first time** it creates the
+> `mysql_data` volume. To change them later, run `docker compose down -v` (this
+> deletes Telescope data) and start again.
+
+#### Fix found while testing: `php artisan serve --no-reload`
+
+With the real `.env`, `/horizon` loaded but `/horizon/api/stats` returned 500
+(Redis *Connection refused*) and `/telescope` returned 404.
+
+Cause: `php artisan serve` handles web requests in a separate PHP server process.
+Unless `--no-reload` is passed, it removes every environment variable from that
+process except a short allow-list
+(`vendor/laravel/framework/src/Illuminate/Foundation/Console/ServeCommand.php`,
+`startProcess()`). Web requests therefore lost the step 3–5 Compose overrides
+and fell back to `.env` (`REDIS_HOST=127.0.0.1`, Telescope off). Artisan
+commands (Horizon, Tinker) were unaffected, which is why the earlier checks
+passed.
+
+`compose.yaml`:
+
+```diff
+-    command: php artisan serve --host=0.0.0.0 --port=8000
++    command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
+```
+
+Side effect: the server no longer restarts itself when `.env` changes. Run
+`docker compose restart app horizon` after editing `.env`.
+
+#### First full start
+
+```bash
+docker compose up -d --wait
+docker compose exec app php artisan migrate --database=telescope --path=database/migrations/telescope --force
+```
+
+Then open <http://127.0.0.1:8000/horizon> and <http://127.0.0.1:8000/telescope>.
+
+Check a queued job reaches Horizon end to end:
+
+```bash
+docker compose exec app php artisan tinker --execute 'Illuminate\Support\Facades\Artisan::queue("inspire");'
+curl -s http://127.0.0.1:8000/horizon/api/jobs/completed
+```
+
+Expected result: the job `inspire` is listed with status `completed`. Queue a
+built-in command rather than a closure: Tinker can't serialise closures written
+in `--execute` code.
+
+Results: `/up`, `/horizon`, `/horizon/api/stats` and `/telescope` all return
+200, Telescope records requests in MySQL, and Horizon completes the queued job.
 
 ### 7. Restart policy, scheduler, `.dockerignore`, minor clean-ups
 
